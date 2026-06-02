@@ -1,0 +1,175 @@
+<article class="pc-card">
+  @if (post.isPinned && communityContext) {
+    <div class="pc-pinned-badge">📌 Pinned</div>
+  }
+  <!-- HEADER -->
+  <div class="pc-header">
+    <a [routerLink]="'/profile/' + authorUsername" class="pc-avatar-link">
+      @if (authorAvatar) {
+        <img [src]="authorAvatar | mediaUrl" [alt]="authorName" class="pc-avatar" />
+      } @else {
+        <div class="pc-avatar pc-avatar-initial" [style.background-color]="initialColor(authorName)">
+          {{ initial(authorName) }}
+        </div>
+      }
+    </a>
+
+    <div class="pc-meta">
+      <div class="pc-meta-top">
+        <a [routerLink]="'/profile/' + authorUsername" class="pc-author">{{ authorName }}</a>
+        <span class="pc-handle">&#64;{{ authorUsername }}</span>
+        <span class="pc-dot">·</span>
+        <span class="pc-time">{{ relativeTime(post.createdAt) }}</span>
+      </div>
+      @if (post.origin === 'public_community' && communityName) {
+        <a [routerLink]="'/community/c/' + communityId" class="pc-community-badge">in {{ communityName }}</a>
+      }
+    </div>
+
+    @if (hasMenuActions) {
+      <div class="pc-menu-wrap">
+        <button class="pc-menu-btn" (click)="toggleMenu($event)" aria-label="Post options" aria-haspopup="true" [attr.aria-expanded]="menuOpen()">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
+          </svg>
+        </button>
+        @if (menuOpen()) {
+          <ul role="menu" class="pc-menu" (click)="$event.stopPropagation()">
+            @if (canPin) {
+              <li role="menuitem"><button class="pc-menu-item" (click)="onPin()" [attr.aria-label]="post.isPinned ? 'Unpin post' : 'Pin post'">{{ post.isPinned ? 'Unpin' : 'Pin' }}</button></li>
+            }
+            @if (isOwner || isMod) {
+              <li role="menuitem"><button class="pc-menu-item pc-menu-danger" (click)="onDelete()" aria-label="Delete post">Delete</button></li>
+            }
+          </ul>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- BODY -->
+  <div class="pc-body">
+    <p class="pc-text">{{ displayText }}</p>
+    @if (shouldTruncate) {
+      <button class="pc-see-more" (click)="toggleExpand()">
+        {{ expanded() ? 'See less' : 'See more' }}
+      </button>
+    }
+    @if (post.mediaUrl) {
+      <div class="pc-media">
+        @if (post.mediaType === 'video') {
+          @if (videoError()) {
+            <div class="pc-video-unavailable">Video unavailable</div>
+          } @else {
+            <video
+              controls
+              preload="metadata"
+              [src]="mediaUrlFull"
+              (error)="videoError.set(true)"></video>
+          }
+        } @else if (post.mediaType === 'image') {
+          <img [src]="mediaUrlFull" alt="Post media" />
+        }
+      </div>
+    }
+  </div>
+
+  <!-- FOOTER -->
+  <div class="pc-footer">
+    <button class="pc-action" [class.liked]="post.liked" (click)="toggleLike()" [attr.aria-label]="post.liked ? 'Unlike post' : 'Like post'" [attr.aria-pressed]="post.liked">
+      <svg viewBox="0 0 24 24" width="18" height="18" [attr.fill]="post.liked ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2">
+        <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
+      </svg>
+      <span>{{ post.likesCount }}</span>
+    </button>
+
+    <button class="pc-action" [class.active]="commentsOpen()" (click)="toggleComments()" aria-label="View comments">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+      <span>{{ post.commentCount }}</span>
+    </button>
+  </div>
+
+  <!-- COMMENTS -->
+  @if (commentsOpen()) {
+    <div class="pc-comments">
+      @if (commentsLoading()) {
+        <div class="pc-comments-loading">Loading comments…</div>
+      } @else if (commentsError()) {
+        <div class="pc-comments-error">Could not load comments.</div>
+      } @else {
+        @if (comments().length === 0) {
+          <div class="pc-comments-empty">Be the first to comment.</div>
+        }
+        @for (c of visibleComments(); track c.id) {
+          <div class="pc-comment">
+            @if (commentAuthorUsername(c); as cUsername) {
+              <a [routerLink]="'/profile/' + cUsername" class="pc-comment-avatar-link">
+                @if (commentAuthorAvatar(c)) {
+                  <img [src]="commentAuthorAvatar(c) | mediaUrl" class="pc-comment-avatar" alt="" />
+                } @else {
+                  <div class="pc-comment-avatar pc-avatar-initial" [style.background-color]="initialColor(commentAuthorName(c))">
+                    {{ initial(commentAuthorName(c)) }}
+                  </div>
+                }
+              </a>
+            } @else {
+              @if (commentAuthorAvatar(c)) {
+                <img [src]="commentAuthorAvatar(c) | mediaUrl" class="pc-comment-avatar" alt="" />
+              } @else {
+                <div class="pc-comment-avatar pc-avatar-initial" [style.background-color]="initialColor(commentAuthorName(c))">
+                  {{ initial(commentAuthorName(c)) }}
+                </div>
+              }
+            }
+            <div class="pc-comment-body">
+              <div class="pc-comment-top">
+                @if (commentAuthorUsername(c); as cUsername) {
+                  <a [routerLink]="'/profile/' + cUsername" class="pc-comment-author">{{ commentAuthorName(c) }}</a>
+                } @else {
+                  <span class="pc-comment-author">{{ commentAuthorName(c) }}</span>
+                }
+                <span class="pc-comment-time">{{ relativeTime(c.createdAt) }}</span>
+                @if (canDeleteComment(c)) {
+                  <div class="pc-menu-wrap pc-comment-menu-wrap">
+                    <button class="pc-menu-btn" (click)="toggleCommentMenu($event, c.id)" aria-label="Comment options" aria-haspopup="true" [attr.aria-expanded]="openCommentMenuId() === c.id">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                        <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
+                      </svg>
+                    </button>
+                    @if (openCommentMenuId() === c.id) {
+                      <ul role="menu" class="pc-menu" (click)="$event.stopPropagation()">
+                        <li role="menuitem"><button class="pc-menu-item pc-menu-danger" (click)="deleteComment(c)" aria-label="Delete comment">Delete</button></li>
+                      </ul>
+                    }
+                  </div>
+                }
+              </div>
+              <p class="pc-comment-text">{{ c.text }}</p>
+            </div>
+          </div>
+        }
+        @if (comments().length > visibleCount()) {
+          <button class="pc-load-more" (click)="loadMoreComments()">Load more</button>
+        }
+      }
+
+      <div class="pc-comment-form">
+        <input
+          type="text"
+          class="pc-comment-input"
+          placeholder="Write a comment..."
+          maxlength="400"
+          [value]="newComment()"
+          (input)="onCommentInput($event)"
+          (focus)="requireAuth()"
+          (keydown.enter)="sendComment()"
+        />
+        <button class="pc-comment-send" (click)="sendComment()" [disabled]="!newComment().trim() || sendingComment()">
+          Send
+        </button>
+      </div>
+    </div>
+  }
+</article>

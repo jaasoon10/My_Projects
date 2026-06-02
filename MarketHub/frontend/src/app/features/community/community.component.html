@@ -1,0 +1,292 @@
+<!-- Drawer overlay (mobile) -->
+@if (drawerOpen() || rightDrawerOpen()) {
+  <div class="drawer-overlay" (click)="drawerOpen.set(false); rightDrawerOpen.set(false)"></div>
+}
+
+<!-- Mobile sidebar toggles -->
+<button class="sidebar-toggle sidebar-toggle-left" (click)="toggleDrawer()" aria-label="Open left sidebar">
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+</button>
+<button class="sidebar-toggle sidebar-toggle-right" (click)="toggleRightDrawer()" aria-label="Open right sidebar">
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="3" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+</button>
+
+<!-- MAIN LAYOUT -->
+<div class="community-layout">
+
+  <!-- SIDEBAR LEFT -->
+  <aside class="sidebar-left" [class.drawer-open]="drawerOpen()">
+    @if (drawerOpen()) {
+      <button class="drawer-close drawer-close-left" (click)="drawerOpen.set(false)" aria-label="Close sidebar">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </button>
+    }
+    <nav class="sidebar-section">
+      <a routerLink="/community" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-item">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        Home
+      </a>
+      <a routerLink="/search" routerLinkActive="active" class="nav-item">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        Search
+      </a>
+    </nav>
+
+    <div class="sidebar-section">
+      <h3 class="section-title">MY COMMUNITIES</h3>
+      @if (!auth.isAuthenticated()) {
+        <p class="sidebar-empty">Sign in to see your communities.</p>
+      } @else if (communitiesLoading()) {
+        <div class="skeleton-item"></div>
+        <div class="skeleton-item"></div>
+        <div class="skeleton-item short"></div>
+      } @else if (communitiesError()) {
+        <p class="sidebar-empty">Could not load communities.</p>
+      } @else if (communities().length === 0) {
+        <p class="sidebar-empty">You haven't joined any community yet.</p>
+      } @else {
+        @for (comm of communities(); track comm.id) {
+          @if (comm.type === 'public') {
+            <a [routerLink]="'/community/c/' + comm.id" class="community-item">
+              @if (comm.avatar) {
+                <img [src]="comm.avatar | mediaUrl" [alt]="comm.name" class="community-avatar-img" />
+              } @else {
+                <span class="community-initial" [style.background-color]="getInitialColor(comm.name)">{{ comm.name[0].toUpperCase() }}</span>
+              }
+              <span class="community-name">{{ comm.name }} <span class="community-tag">[Public]</span></span>
+            </a>
+          } @else {
+            <a [routerLink]="'/community/p/' + comm.id" class="community-item">
+              @if (comm.avatar) {
+                <img [src]="comm.avatar | mediaUrl" [alt]="comm.name" class="community-avatar-img" />
+              } @else {
+                <span class="community-initial" [style.background-color]="getInitialColor(comm.name)">{{ comm.name[0].toUpperCase() }}</span>
+              }
+              <span class="community-name">{{ comm.name }} <span class="community-tag">[Private]</span></span>
+            </a>
+          }
+        }
+      }
+      <button class="add-topics-btn" (click)="openDiscoverCommunities()">+ Discover Communities</button>
+    </div>
+
+    <div class="sidebar-section">
+      <h3 class="section-title">TOPICS</h3>
+      @if (topicsLoading()) {
+        <div class="skeleton-item"></div>
+        <div class="skeleton-item short"></div>
+      } @else {
+        @for (topic of pinnedTopics(); track topic.id) {
+          <a [routerLink]="'/community/t/' + topic.slug" class="topic-item">
+            <span class="topic-icon">{{ getCategoryIcon(topic.category) }}</span>
+            <span>{{ topic.name }}</span>
+          </a>
+        }
+      }
+      <div class="topic-search-anchor">
+        <button class="add-topics-btn" (click)="openTopicSearch()">+ Add Topics</button>
+      </div>
+    </div>
+
+    <div class="sidebar-bottom">
+      <button class="create-community-btn" (click)="openCreateCommunity()">Create Community</button>
+    </div>
+  </aside>
+
+  <!-- FEED CENTRAL -->
+  <main class="feed-central">
+    <!-- Tab selector -->
+    <div class="feed-tabs" role="tablist">
+      <button
+        role="tab"
+        class="tab-btn"
+        [class.active]="activeTab === 'trending'"
+        [attr.aria-selected]="activeTab === 'trending'"
+        (click)="setTab('trending')">
+        Trending
+      </button>
+      <button
+        role="tab"
+        class="tab-btn"
+        [class.active]="activeTab === 'following'"
+        [attr.aria-selected]="activeTab === 'following'"
+        (click)="setTab('following')">
+        Following
+      </button>
+    </div>
+
+    <!-- Create post box -->
+    <div class="create-post-card" [class.disabled]="!auth.isAuthenticated()">
+      <div class="create-post-top">
+        <div class="post-avatar-small">
+          @if (auth.currentUser()?.avatar) {
+            <img [src]="auth.currentUser()!.avatar | mediaUrl" alt="" />
+          } @else {
+            <div class="avatar-placeholder-sm avatar-initial-sm" [style.background-color]="getInitialColor(auth.currentUser()?.username || '')">
+              {{ getInitial(auth.currentUser()?.username || '') }}
+            </div>
+          }
+        </div>
+        @if (auth.isAuthenticated()) {
+          <textarea
+            #postTextarea
+            class="post-input post-textarea"
+            placeholder="What's on your mind regarding the markets?"
+            rows="1"
+            maxlength="400"
+            [value]="postText()"
+            (input)="onTextInput($event)"
+          ></textarea>
+        } @else {
+          <input
+            type="text"
+            class="post-input"
+            placeholder="Sign in to join the conversation"
+            readonly
+            (focus)="onCreateFocus()"
+            (click)="onCreateFocus()"
+          />
+        }
+      </div>
+
+      @if (mediaPreview()) {
+        <div class="media-preview">
+          @if (mediaIsVideo()) {
+            <video controls preload="metadata" [src]="mediaPreview()!"></video>
+          } @else {
+            <img [src]="mediaPreview()!" alt="Preview" />
+          }
+          <button class="media-remove" (click)="removeMedia()" title="Remove" aria-label="Remove media">×</button>
+        </div>
+      }
+
+      <div class="create-post-actions">
+        <div class="post-action-icons">
+          <input #fileInput type="file" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime" hidden (change)="onFileSelected($event)" />
+          <button class="icon-btn" title="Image" aria-label="Add image" (click)="triggerFilePicker(fileInput)" [disabled]="!auth.isAuthenticated()">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+            </svg>
+          </button>
+          <div class="emoji-btn-wrap">
+            <button class="icon-btn" title="Emoji" aria-label="Add emoji" (click)="onEmojiClick($event)" [disabled]="!auth.isAuthenticated()">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
+              </svg>
+            </button>
+            @if (emojiPickerOpen()) {
+              <app-emoji-picker
+                (emojiSelected)="onEmojiSelected($event)"
+                (closed)="onEmojiClosed()">
+              </app-emoji-picker>
+            }
+          </div>
+          @if (auth.isAuthenticated() && postText().length > 0) {
+            <span class="char-counter" [class.near-limit]="postText().length > 360">{{ postText().length }}/400</span>
+          }
+        </div>
+        @if (auth.isAuthenticated()) {
+          <button class="post-btn" (click)="submitPost()" [disabled]="!postText().trim() || creating()">
+            {{ creating() ? 'Posting…' : 'Post' }}
+          </button>
+        } @else {
+          <button class="post-btn" (click)="requireAuth()">Post</button>
+        }
+      </div>
+
+      @if (createError()) {
+        <div class="create-error">{{ createError() }}</div>
+      }
+    </div>
+
+    <!-- Feed -->
+    @if (feedLoading() && posts().length === 0) {
+      @for (_ of [1,2,3]; track $index) {
+        <app-post-skeleton></app-post-skeleton>
+      }
+    } @else if (feedError()) {
+      <div class="feed-error-card">
+        <span class="feed-error-icon">⚠️</span>
+        <span class="feed-error-text">Could not load posts.</span>
+        <button class="feed-retry-btn" (click)="retryFeed()">Try again</button>
+      </div>
+    } @else if (posts().length === 0) {
+      <div class="feed-state">No posts yet. Be the first to share something!</div>
+    } @else {
+      @for (post of posts(); track post.id) {
+        <app-post-card [post]="post" (deleted)="onPostDeleted($event)"></app-post-card>
+      }
+    }
+
+    <!-- Infinite scroll sentinel -->
+    <div #feedSentinel class="feed-sentinel">
+      @if (loadingMore()) {
+        <app-post-skeleton></app-post-skeleton>
+      } @else if (loadMoreError()) {
+        <div class="feed-error-card feed-error-inline">
+          <span class="feed-error-text">Could not load more posts.</span>
+          <button class="feed-retry-btn" (click)="retryLoadMore()">Try again</button>
+        </div>
+      } @else if (!hasMore() && posts().length > 0) {
+        <div class="feed-end">You're all caught up 🎉</div>
+      }
+    </div>
+  </main>
+
+  <!-- SIDEBAR RIGHT -->
+  <aside class="sidebar-right" [class.drawer-open]="rightDrawerOpen()">
+    @if (rightDrawerOpen()) {
+      <button class="drawer-close drawer-close-right" (click)="rightDrawerOpen.set(false)" aria-label="Close sidebar">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </button>
+    }
+    <div class="sidebar-right-content">
+      <app-community-right-sidebar></app-community-right-sidebar>
+    </div>
+    <nav class="legal-links" aria-label="Legal">
+      <a routerLink="/legal/legal-notice">Legal Notice</a>
+      <span class="legal-links-dot">·</span>
+      <a routerLink="/legal/privacy">Privacy</a>
+      <span class="legal-links-dot">·</span>
+      <a routerLink="/legal/terms">Terms</a>
+      <span class="legal-links-dot">·</span>
+      <a routerLink="/legal/cookies">Cookies</a>
+    </nav>
+    <div class="copyright">MarketHub &copy; 2026. All rights reserved.</div>
+  </aside>
+
+</div>
+
+@if (showCreateCommunityModal()) {
+  <app-create-community-modal
+    (closed)="onCreateCommunityClose()"
+    (created)="onCommunityCreated($event)">
+  </app-create-community-modal>
+}
+
+@if (showTopicSearchPopup()) {
+  <app-topic-search-popup
+    [topics]="allTopics()"
+    [pinnedIds]="pinnedTopicIds"
+    (closed)="onTopicSearchClose()"
+    (pinChanged)="onTopicPinChanged($event)">
+  </app-topic-search-popup>
+}
+
+@if (showDiscoverPopup()) {
+  <app-discover-communities-popup
+    (closed)="onDiscoverClose()">
+  </app-discover-communities-popup>
+}

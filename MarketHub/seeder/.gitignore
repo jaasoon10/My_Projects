@@ -1,0 +1,6 @@
+# seeder/.gitignore
+.env
+node_modules/
+data/
+state/
+logs/

@@ -1,0 +1,222 @@
+:host {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: block;
+}
+
+.tsp-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(13, 28, 50, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 1;
+}
+
+.tsp-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(720px, calc(100vw - var(--spacing-8)));
+  max-height: min(80vh, 720px);
+  background-color: var(--surface-container-lowest);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-ambient);
+  display: flex;
+  flex-direction: column;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.tsp-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-5) var(--spacing-5) var(--spacing-3);
+}
+
+.tsp-search-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  background-color: var(--surface-container-low);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-3) var(--spacing-4);
+}
+
+.tsp-search-icon {
+  flex-shrink: 0;
+  color: var(--on-surface-variant);
+}
+
+.tsp-search-input {
+  flex: 1;
+  border: none;
+  background: none;
+  outline: none;
+  font-size: var(--text-body-lg);
+  color: var(--on-surface);
+  font-family: var(--font-body);
+}
+
+.tsp-search-input::placeholder {
+  color: var(--on-primary-container);
+}
+
+.tsp-close {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: none;
+  border-radius: var(--radius-full);
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background-color 0.15s;
+}
+
+.tsp-close:hover {
+  background-color: var(--surface-container-high);
+}
+
+.tsp-filters {
+  display: flex;
+  gap: var(--spacing-2);
+  padding: 0 var(--spacing-5) var(--spacing-3);
+  flex-wrap: wrap;
+}
+
+.tsp-filter {
+  padding: var(--spacing-2) var(--spacing-3);
+  border: none;
+  background-color: var(--surface-container-low);
+  border-radius: var(--radius-full);
+  font-size: var(--text-body-sm);
+  font-weight: var(--weight-medium);
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.tsp-filter:hover {
+  background-color: var(--surface-container-high);
+}
+
+.tsp-filter.active {
+  background-color: var(--primary);
+  color: var(--on-primary);
+}
+
+.tsp-list {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 var(--spacing-3) var(--spacing-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+
+.tsp-empty {
+  padding: var(--spacing-8) var(--spacing-4);
+  text-align: center;
+  font-size: var(--text-body-md);
+  color: var(--on-surface-variant);
+}
+
+.tsp-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3) var(--spacing-4);
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color 0.15s;
+  font-family: var(--font-body);
+}
+
+.tsp-item:hover {
+  background-color: var(--surface-container-low);
+}
+
+.tsp-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  width: 32px;
+  text-align: center;
+}
+
+.tsp-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tsp-name {
+  font-size: var(--text-body-md);
+  font-weight: var(--weight-medium);
+  color: var(--on-surface);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tsp-category {
+  font-size: var(--text-body-sm);
+  color: var(--on-surface-variant);
+}
+
+.tsp-pin-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  border-radius: var(--radius-default);
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.tsp-pin-btn:hover {
+  background-color: var(--surface-container-high);
+  color: var(--secondary);
+}
+
+.tsp-pin-btn.pinned {
+  color: var(--secondary);
+}
+
+@media (max-width: 640px) {
+  .tsp-popup {
+    width: calc(100vw - var(--spacing-4));
+    max-height: 90vh;
+  }
+
+  .tsp-header {
+    padding: var(--spacing-4) var(--spacing-3) var(--spacing-2);
+  }
+
+  .tsp-filters {
+    padding: 0 var(--spacing-3) var(--spacing-3);
+  }
+
+  .tsp-list {
+    padding: 0 var(--spacing-2) var(--spacing-3);
+  }
+}
